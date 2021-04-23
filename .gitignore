@@ -1,0 +1,7 @@
+.ipynb_checkpoints/
+__pycache__/
+data_for_dev/
+GitHub/
+保管庫/
+human_sensor_tyolo2_onnx_trt_dev.ipynb
+tyolov2NN_trained/tyolov2NN_trained.trt

@@ -19,8 +19,7 @@ Jetson Nano上で訓練済みTiny YOLO v2を使用し、人間を検出したら
 
 ### 動作
 
-事前に、Jetson Nanoにカメラ（CSIでもUSBでも可）と赤色LEDをつなぎます。<br>
-LED設置の詳細は「LED設置 ～ Pythonから制御可能な状態にするまで」で詳細に記述しています。<BR>
+事前に、Jetson Nanoにカメラ（CSIでもUSBでも可）と赤色LEDが適切に接続されているとします<br>
 
 ![全体接続図_80](https://user-images.githubusercontent.com/52105933/115812412-4cdcff00-a42c-11eb-9c30-04f74e7655ff.png)
 

@@ -119,7 +119,7 @@ class Yolov2_bboxes_generator(object):
         '''
         
         #規定量のbboxes、その各々のbboxの信頼度、定義済み各クラスの確信度を算出
-        #「規定量」とは、1セルあたりのアンカー個数のこと。通常は、セル個数169 x アンカー個数5 = 845個。
+        #「規定量」とは、1セルあたりのbboxes個数(=アンカー個数)のこと。通常は、セル個数169 x アンカー個数5 = 845個。
         bboxes, bboxes_confidence, bboxes_class_probs = self._calc_bboxes_attributes(input_for_generate)
         
         #規定量のbboxes（とその属性）を、scoreを基準に足切り
@@ -146,13 +146,13 @@ class Yolov2_bboxes_generator(object):
         
     #規定量のbboxes、その各々のbboxの信頼度とクラスの確信度を算出するprivate関数
     #「規定量」とは、「scoreで足切りしたりNMSで抑制したりする前の、仕様上フルの」と言う意味。
-    #通常は、セル個数169 x 1セルあたりアンカー個数5 = 845個。
+    #通常は、セル個数169 x 1セルあたりのbboxes個数(=アンカー個数)5 = 845個。
     def _calc_bboxes_attributes(self, input_for_calc):
         
         '''
         規定量のbboxes、その各々のbboxの信頼度とクラスの確信度を算出する。        
         「規定量」とは、「scoreで足切りしたりNMSで抑制したりする前の、仕様上フルの」と言う意味。ここでは1アンカーあたり1個のbboxを生成する。
-        通常は、セル個数169 x 1セルあたりアンカー個数5 = 845個。
+        通常は、セル個数169 x 1セルあたりのbboxes個数(=アンカー個数)5 = 845個。
         ＜入力＞
         ・input_for_calc：
         　入力データ。NNの出力のshapeを(13, 13, アンカー個数, 5+定義済みクラス数)に変換したndarray。

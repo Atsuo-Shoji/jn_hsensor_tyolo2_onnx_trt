@@ -86,7 +86,7 @@ class Yolov2_bboxes_generator(object):
         
         #output_from_NNを(13, 13, アンカー個数, 5+定義済みクラス数)のshapeに変換。通常は(13, 13, 5, 25)。        
         #2個の「13」は1画像中のセルの数、「アンカー個数」は1セルあたりで生成するbboxesの数で、anchorsの個数と等しい。
-        #「5+定義済みクラス数」の「5」は、bbox1個の座標とサイズの4数値とscore。
+        #「5+定義済みクラス数」の「5」は、bbox1個の座標とサイズの4数値と信頼度。
         #「5+定義済みクラス数」の「定義済みクラス数」は、bbox1個の、定義済み各クラスについての確信度。通常は20クラス。
         
         output_ = np.transpose(output_from_NN, [0, 2, 3, 1])
@@ -96,8 +96,6 @@ class Yolov2_bboxes_generator(object):
         
         input_for_generation = np.reshape(output_, new_shape)
         
-        #print("input_for_generation:\n", input_for_generation)
-                
         return input_for_generation
     
     
@@ -125,8 +123,13 @@ class Yolov2_bboxes_generator(object):
         bboxes, bboxes_confidence, bboxes_class_probs = self._calc_bboxes_attributes(input_for_generate)
         
         #規定量のbboxes（とその属性）を、scoreを基準に足切り
-        #選抜されたbboxes、その各々のscoreと推定クラスindexを返す
+        #足切りの結果残存したものが「検出されたbboxes」
+        #検出されたbboxes、その各々のscoreと推定クラスindexを返す
         bboxes, bboxes_score, bboxes_class_index = self._filter_bboxes(bboxes, bboxes_confidence, bboxes_class_probs)
+        
+        if bboxes is None or bboxes.shape[0]==0:
+            #検出されたbboxesが無ければ即終了
+            return None, None, None
         
         #bboxesの座標とサイズの単位を、cap_img_sizeに（ピクセルとなる）
         #次の非最大値抑制では、オリジナルの画像（キャプチャ画像）内のピクセル単位で処理を行うため
@@ -168,6 +171,7 @@ class Yolov2_bboxes_generator(object):
         #https://arxiv.org/pdf/1612.08242.pdf
         #の、「Figure 3」に従った表記をする。
         
+        
         ##全bboxes各々の5つの属性（座標とサイズと信頼度）、各クラスの確信度の算出##
         ##5つの属性とは、σ(tx),σ(tx),bw, bh,σ(to)のこと。
         
@@ -198,20 +202,7 @@ class Yolov2_bboxes_generator(object):
         #各クラスの確信度　確率ではない。softmaxを通さない。物体検出の定義済み全クラスは通常MECEではない。よって、0～1で正規化するだけ。
         bboxes_class_probs = self._sigmoid(prob_classes_raw) #(13, 13, アンカー個数, 定義済みクラス数)
         
-        '''
-        print("box_xy.shape:", box_xy.shape)
-        print("box_xy:\n", box_xy)
-        print()
-        print("bwh.shape:", bwh.shape)
-        print("bwh:\n", bwh)
-        
-        print("box_confidence.shape:", box_confidence.shape)
-        print("box_confidence:\n", box_confidence)
-        print()
-        print("box_class_probs.shape:", box_class_probs.shape)
-        print("box_class_probs:\n", box_class_probs)
-        '''
-        
+                
         ##bboxの座標を変換 bx、byの算出##
         #①所属セル中の座標から、画像の左上を原点とした座標へ。cxとcyを各bboxの座標に加算する。
         #②bboxの座標を、その中心からbboxの左上の座標へ。
@@ -234,6 +225,7 @@ class Yolov2_bboxes_generator(object):
         
         #これで、bx、by、bw、bhが出そろった。
         
+        
         ##bboxの座標とサイズ（bx、by、bw、bh）の単位を、NN入力画像1枚にする
         #この時点では、単位は1セル（の幅、高さ）となっている。
         #これを、NN入力画像1枚（の幅、高さ）とする。通常、(416, 416)。
@@ -243,13 +235,17 @@ class Yolov2_bboxes_generator(object):
         #bboxの座標とサイズを1配列に統合
         bboxes = np.concatenate((bxy, bwh), axis=-1) #(13, 13, アンカー個数, 4)
         
+        
         return bboxes, bboxes_confidence, bboxes_class_probs
     
+    
     #規定量のbboxesを、scoreを基準に足切りするprivate関数
+    #足切りされて残ったものが「検出されたbboxes」となる
     def _filter_bboxes(self, bboxes, bboxes_confidence, bboxes_class_probs):
         
         '''
         規定量のbboxesを、scoreを基準に足切りする。
+        足切りされて残ったものが「検出されたbboxes」となる。
         ＜入力＞
         ・bboxes：
         　bboxes（群）。規定量ある。ndarrayで(13, 13, アンカー個数, 4)。
@@ -259,11 +255,11 @@ class Yolov2_bboxes_generator(object):
         　上記bboxesの個々のbboxの各クラスの確信度。ndarrayで(13, 13, アンカー個数, 定義済みクラス数)。
         ＜出力＞
         ・bboxes_qualified：
-        　足切りで生き残って選抜されたbboxes。ndarrayで(選抜されたbboxes個数, 4)。
+        　足切りで生き残った「検出されたbboxes」。ndarrayで(検出されたbboxes個数, 4)。
         ・bboxes_qualified_score：
-        　上記bboxesの個々のbboxのscore。ndarrayで(選抜されたbboxes個数, )。
+        　上記bboxesの個々のbboxのscore。ndarrayで(検出されたbboxes個数, )。
         ・bboxes_qualified_class_index：
-        　上記bboxesの個々のbboxの推定クラスインデックス。ndarrayで(選抜されたbboxes個数, )。
+        　上記bboxesの個々のbboxの推定クラスインデックス。ndarrayで(検出されたbboxes個数, )。
           推定クラスインデックスは、「クラス毎のscore」 = 信頼度 x 各クラスの確信度　の最大値を与えるクラスのインデックス。
         '''
         
@@ -283,14 +279,6 @@ class Yolov2_bboxes_generator(object):
         #「クラス毎のscore」 = 信頼度 x 各クラスの確信度　の最大値を与えるクラスindex
         bboxes_class_idx = np.argmax(bboxes_scores_classes, axis=-1) #(13, 13, アンカー個数)
         
-        '''
-        print("bboxes_scores_classes:\n", bboxes_scores_classes)
-        print()
-        print("bboxes_score:\n", bboxes_score)
-        print("bboxes_qualified_idx_tpl:\n", bboxes_qualified_idx_tpl)
-        print()
-        print("bboxes_class_idx:\n", bboxes_class_idx)        
-        '''
         
         bboxes_qualified = bboxes[bboxes_qualified_idx_tpl]
         bboxes_qualified_score = bboxes_score[bboxes_qualified_idx_tpl]
@@ -300,9 +288,9 @@ class Yolov2_bboxes_generator(object):
         '''
         例）
         足切りの対象となるbboxes_scoreのshapeは(13, 13, アンカー個数)、つまりaxisは3個。
-        よって、タプルbboxes_qualified_idx_tplの要素数は3となる。
+        よって、タプルbboxes_qualified_idx_tplの要素数は3で、要素のindexは0、1、2となる。
         
-        ▼セル(11, 8)のbbox3番とセル(5, 4)のbbox1番の2個のbboxesが選抜された
+        ▼セル(11, 8)のbbox3番とセル(5, 4)のbbox1番の2個のbboxesが残った
         bboxes_qualified_idx_tpl[0] = [11, 5] ndarray
         bboxes_qualified_idx_tpl[1] = [8, 4] ndarray
         bboxes_qualified_idx_tpl[2] = [3, 1] ndarray
@@ -310,7 +298,7 @@ class Yolov2_bboxes_generator(object):
         bboxes_score[bboxes_qualified_idx_tpl].shape:(2,)
         bboxes_class_idx[bboxes_qualified_idx_tpl].shape:(2,)
         
-        ▼セル(11, 8)のbbox3番のbboxが選抜された
+        ▼セル(11, 8)のbbox3番のbboxが残った
         bboxes_qualified_idx_tpl[0] = [11] ndarray
         bboxes_qualified_idx_tpl[1] = [8] ndarray
         bboxes_qualified_idx_tpl[2] = [3] ndarray
@@ -318,7 +306,7 @@ class Yolov2_bboxes_generator(object):
         bboxes_score[bboxes_qualified_idx_tpl].shape:(1,)
         bboxes_class_idx[bboxes_qualified_idx_tpl].shape:(1,)
         
-        ▼選抜されたbboxesが無かった
+        ▼残ったbboxesが無かった
         bboxes_qualified_idx_tpl[0] = []
         bboxes_qualified_idx_tpl[1] = []
         bboxes_qualified_idx_tpl[2] = []
@@ -331,18 +319,18 @@ class Yolov2_bboxes_generator(object):
         return bboxes_qualified, bboxes_qualified_score, bboxes_qualified_class_index
     
     
-    #bboxesに対し非最大値抑制（「NMS」）を適用し、さらにbboxesを絞り込むprivate関数
+    #検出されたbboxesに対し非最大値抑制（「NMS」）を適用し、さらにbboxesを絞り込むprivate関数
     def _nms_bboxes(self, bboxes, bboxes_score, bboxes_class_index):
         
         '''
-        bboxesに対し非最大値抑制（「NMS」）を適用し、さらにbboxesを絞り込む。
+        検出されたbboxesに対し非最大値抑制（「NMS」）を適用し、さらにbboxesを絞り込む。
         ＜入力＞
         ・bboxes：
-        　scoreでの足切り後、現時点で生き残っているbboxes。ndarrayで(残存bboxes個数, 4)。
+        　scoreでの足切り後の「検出されたbboxes」。ndarrayで(検出されたbboxes個数, 4)。
         ・bboxes_score：
-        　上記bboxesの個々のbboxのscore。ndarrayで(残存bboxes個数, )。
+        　上記bboxesの個々のbboxのscore。ndarrayで(検出されたbboxes個数, )。
         ・bboxes_qualified_class_index：
-        　上記bboxesの個々のbboxの推定クラスインデックス。ndarrayで(残存bboxes個数, )。
+        　上記bboxesの個々のbboxの推定クラスインデックス。ndarrayで(検出されたbboxes個数, )。
         ＜出力＞
         ・bboxes_through_nms_ary:
         　NMS適用後のbboxes。ndarrayで(適用後bboxes個数, 4)。
@@ -351,6 +339,10 @@ class Yolov2_bboxes_generator(object):
         ・bboxes_through_nms_class_index_ary：
         　上記bboxesの個々のbboxの推定クラスインデックス。ndarrayで(適用後bboxes個数, )。
         '''
+        
+        if bboxes is None or bboxes.shape[0]==0:
+            #念のため・・検出されたbboxesが無ければ即終了
+            return None, None, None        
         
         ##bboxesを同一推定クラスごとにグループ分けし、そのグループごとにNMSを適用
         
@@ -381,28 +373,20 @@ class Yolov2_bboxes_generator(object):
             bboxes_through_nms.append(bboxes_a_class[idxes_bboxes_a_class_through_nms])
             bboxes_through_nms_score.append(bboxes_a_class_score[idxes_bboxes_a_class_through_nms])
             bboxes_through_nms_class_index.append(bboxes_a_class_class_index[idxes_bboxes_a_class_through_nms])
-            
-        if len(bboxes_through_nms)==0:
-            #NMSを適用したら、生き残ったbboxesが無かった。
-            #実際には、この関数に入って来た時に残存bboxes個数が0だった（NMS適用対象が無かった）場合のみ、ここに来る。
-            #全推定クラスでNMSを適用したが選抜されたbboxesが無かった、はありえない。最低でもscore最大のbboxを1個選ぶ。
-            #print("NMS Nothing")
-            return None, None, None
         
-        else:
+                
+        #各リストをndarrayにする。
+        #各リストの中は、推定クラスごとに1個の1軸ndarrayが全推定クラス分並んでいる。
+        #np.concatenateで、その1軸ndarrayの塊を壊して”平坦”な1軸ndarrayにする。
             
-            #各リストをndarrayにする。
-            #各リストの中は、推定クラスごとに1個の1軸ndarrayが全推定クラス分並んでいる。
-            #np.concatenateで、その1軸ndarrayの塊を壊して”平坦”な1軸ndarrayにする。
+        #全推定クラス分NMSを適用した後のbboxes
+        bboxes_through_nms_ary = np.concatenate(bboxes_through_nms) #(適用後bboxes個数, 4)
+        #全推定クラス分NMSを適用した後のbboxesの各bboxのscore
+        bboxes_through_nms_score_ary = np.concatenate(bboxes_through_nms_score) #(適用後bboxes個数,)
+        #全推定クラス分NMSを適用した後のbboxesの各bboxの推定クラスindex
+        bboxes_through_nms_class_index_ary = np.concatenate(bboxes_through_nms_class_index) #(適用後bboxes個数,)
             
-            #全推定クラス分NMSを適用した後のbboxes
-            bboxes_through_nms_ary = np.concatenate(bboxes_through_nms) #(適用後bboxes個数, 4)
-            #全推定クラス分NMSを適用した後のbboxesの各bboxのscore
-            bboxes_through_nms_score_ary = np.concatenate(bboxes_through_nms_score) #(適用後bboxes個数,)
-            #全推定クラス分NMSを適用した後のbboxesの各bboxの推定クラスindex
-            bboxes_through_nms_class_index_ary = np.concatenate(bboxes_through_nms_class_index) #(適用後bboxes個数,)
-            
-            return bboxes_through_nms_ary, bboxes_through_nms_score_ary, bboxes_through_nms_class_index_ary
+        return bboxes_through_nms_ary, bboxes_through_nms_score_ary, bboxes_through_nms_class_index_ary
             
     
     #同一クラスと推定されたbboxesに対し非最大値抑制（「NMS」）を適用し、さらにbboxesを絞り込むprivate関数
@@ -459,7 +443,6 @@ class Yolov2_bboxes_generator(object):
             #の3つに分かれる。
             #以下、このループでの対象bboxesの個数をコメントにて「c」と表記する
             
-            #print("beginning while n_c:", n_c)
             
             ##①bboxesのうち、scoreが最大値のbbox「基準bbox」に”採用”フラグ##
             
@@ -472,11 +455,10 @@ class Yolov2_bboxes_generator(object):
             #基準bbox以外のbboxesのindex（scoreの大きい順に並んでいる）
             idxes_not_std_bboxes = idxes_ordered_score[1:] #(n_c-1,)
             
-            ##②基準bboxとのIOUが閾値を超過しているbboxesに”不採用”フラグ##
             
-            #基準bboxとその他の各bboxとのIOUを算出
-            
-            #基準bboxとその他の各bboxとの重なり領域の面積の算出
+            ##②基準bboxとのIOUが閾値を超過しているbboxesに”不採用”フラグ##            
+            #基準bboxとその他の各bboxとのIOUを算出            
+            #そのIOU算出のため、まず基準bboxとその他の各bboxとの重なり領域の面積の算出
             
             #基準bboxとその他の各bboxの重なり領域の幅
             left_end_overlap = np.maximum(bboxes_left[idx_std_bbox], bboxes_left[idxes_not_std_bboxes]) #(n_c-1,)

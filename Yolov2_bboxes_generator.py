@@ -396,7 +396,7 @@ class Yolov2_bboxes_generator(object):
         同一クラスと推定されたbboxesに対し非最大値抑制（「NMS」）を適用し、さらにbboxesを絞り込む。
         ＜入力＞
         ・bboxes_a_class：
-        　scoreでの足切り後、現時点で生き残っているbboxesのうち、推定クラスが同一のもの。これらにNMSを適用してさらに絞り込む。
+        　scoreでの足切り後の「検出されたbboxes」のうち、推定クラスが同一のもの。
           ndarrayで(そのようなbboxes個数, 4)。
         ・bboxes_a_class_score：
         　上記bboxesの個々のbboxのscore。NMSで使用する尺度。ndarrayで(そのようなbboxes個数, )。
@@ -441,7 +441,6 @@ class Yolov2_bboxes_generator(object):
             #　基準bboxとのIOU > self._nms_threshold　のbboxes：”不採用”
             #　上記以外（基準bboxとのIOU <= self._nms_threshold）のbboxes：フラグ無し　→　次のループはこれが対象bboxesに
             #の3つに分かれる。
-            #以下、このループでの対象bboxesの個数をコメントにて「c」と表記する
             
             
             ##①bboxesのうち、scoreが最大値のbbox「基準bbox」に”採用”フラグ##

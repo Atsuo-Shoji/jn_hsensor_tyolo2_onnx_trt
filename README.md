@@ -57,7 +57,7 @@ LEDを点灯させる「person」もこの20クラスのうちの1つです。
 
 ![推論の流れ_80](https://user-images.githubusercontent.com/52105933/115960307-9cfeb300-a54b-11eb-9c98-cb973369840d.png)
 
-※1：詳細は、後の「モジュール構成」参照のこと
+※1：詳細は、後の「ディレクトリ・ファイル構成」参照のこと
 <BR>
 
 ### ディレクトリ・ファイル構成
@@ -96,6 +96,7 @@ LEDをJetson NanoにつないでPythonから制御可能にする「LED設置」
 ### バウンディングボックスの座標とサイズ算出の詳細
 
 YOLO v2 のNNの推論時の順伝播出力は、定義済みクラス数を20とすると、shape(1, 125, 13, 13)のndarrayです。<br>
+（ただしTensorRTプランからの出力の場合、shape(21125,)のndarrayが1個だけあるListです。）<br>
 これをtransposeとreshapeして、<br>
 shape(13, 13, 5, (5 + 20))にします。意味は以下の通りです。<br>
 （以降、[論文「YOLO9000_Better, Faster, Stronger」](https://arxiv.org/pdf/1612.08242.pdf)の「Figure 3」に沿った表記をします）<br>

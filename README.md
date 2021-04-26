@@ -60,7 +60,7 @@ LEDを点灯させる「person」もこの20クラスのうちの1つです。
 ※1：詳細は、後の「モジュール構成」参照のこと
 <BR>
 
-### モジュール構成
+### ディレクトリ・ファイル構成
 <BR>
 
 | ファイル名 | 製作者または取得場所 |概要|
@@ -69,8 +69,8 @@ LEDを点灯させる「person」もこの20クラスのうちの1つです。
 |Yolov2_bboxes_generator.py|自作|YOLO v2のNNの順伝播出力を受けて、バウンディングボックスの生成などの推論を行う。<BR>バウンディングボックスの座標やサイズの算出、スコアでの足切り、非最大値抑制など。|
 |./tyolov2NN_trained<BR>/tyolov2NN_trained.onnx|ONNXの公式レポジトリ中の[ここ](https://github.com/onnx/models/tree/master/vision/object_detection_segmentation/tiny-yolov2/model)の「tinyyolov2-8.tar.gz」|Pascal VOC Datasetで訓練済みのTiny YOLO v2のONNXモデル。|
 |./tyolov2NN_trained<BR>/voc.names|[これ](https://raw.githubusercontent.com/pjreddie/darknet/master/data/voc.names)|定義済み20クラスラベル。<BR>Pascal VOC Challengeで使用されたもの。|
-|./tyolov2NN_trained<BR>/tyolov2NN_trained.trt|TensorRTが自動生成|上記訓練済みTiny YOLO v2のONNXモデルのTensorRTランタイム。<BR>環境で初回実行時に自動生成される。|
-|get_engine.py|NVIDIA|ONNXモデルからTensorRTランタイムの自動生成。<br>TensorRTランタイムの実行の仲介。|
+|./tyolov2NN_trained<BR>/tyolov2NN_trained.trt|TensorRTが自動生成|上記訓練済みTiny YOLO v2のONNXモデルのTensorRTプラン。<BR>環境で初回実行時に自動生成される。|
+|get_engine.py|NVIDIA|ONNXモデルからTensorRTプランの自動生成。<br>TensorRTランタイムの実行の仲介。|
 |common.py|NVIDIA|TensorRTランタイムの推論実行。|
 
 <BR>

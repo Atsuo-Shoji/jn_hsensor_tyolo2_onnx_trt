@@ -90,7 +90,7 @@ LEDをJetson NanoにつないでPythonから制御可能にする「LED設置」
 
 ### キャプチャ映像取得から推論表示までの流れ
 
-![bboxes決定と表示とLED制御_流れ_75](https://user-images.githubusercontent.com/52105933/115940952-57f06780-a4de-11eb-8584-7bf364f4583a.png)
+![bboxes決定と表示とLED制御_流れ_75](https://user-images.githubusercontent.com/52105933/116016431-8eadb580-a677-11eb-8ccd-86eee6d80f2d.png)
 <br>
 
 ### バウンディングボックスの座標とサイズ算出の詳細

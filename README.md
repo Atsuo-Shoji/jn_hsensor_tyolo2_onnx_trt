@@ -13,7 +13,7 @@ Jetson Nano上で訓練済みTiny YOLO v2を使用し、人間を検出したら
 |![person_on_8sec_crop](https://user-images.githubusercontent.com/52105933/115808263-25366880-a425-11eb-9716-ab5faf962d15.gif)|![bus_off_8sec_crop](https://user-images.githubusercontent.com/52105933/115808494-89592c80-a425-11eb-9c88-988b99ae256a.gif)|
 
 ※理論の説明は基本的にしていません。他のリソースを参考にしてください。<br>
-&nbsp;&nbsp; ネットや書籍でなかなか明示されておらず、私自身が実装に際し情報収集や理解に不便を感じたものを記載しています。
+&nbsp;&nbsp; ネットや書籍でなかなか明示されておらず、私自身が実装に際し情報収集や理解に不便を感じたものを中心に記載しています。
 
 <br>
 
@@ -237,9 +237,9 @@ python3 ./jetson-gpio/samples/simple_out.py
 
 <br>
 
-### その他
+## その他
 
-本リポジトリは、NVIDIA作成のプログラムを利用しており、以下の条件でライセンスされています。<BR>
+本リポジトリは、NVIDIA作成のオープンソースのプログラムを利用しており、以下の条件でライセンスされています。<BR>
 ```
 Copyright 1993-2020 NVIDIA Corporation.  All rights reserved.
 

@@ -107,7 +107,7 @@ shape(13, 13, 5, (5 + 20))にします。意味は以下の通りです。<br>
 このshape(13, 13, 5, 25)のndarrayに対して、以下の演算を加えます。<br>
 演算結果がバウンディングボックスの座標とサイズです。<br>
 
-![bbox座標とサイズ算出演算_80](https://user-images.githubusercontent.com/52105933/115941026-9dad3000-a4de-11eb-9609-72417587c503.png)
+![bbox座標とサイズ算出演算_80](https://user-images.githubusercontent.com/52105933/117083344-7298cb00-ad7f-11eb-8180-9552845f8cdf.png)
 <br>
 
 この時点では、バウンディングボックスの座標とサイズの単位は「セル」です。<br>
